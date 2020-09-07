@@ -78,7 +78,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
    // calculate new state with noise
    for (size_t i = 0; i < num_particles; i++) {
      // update position estimates
-     if (fabs(yaw_rate < 0.00001)) {
+     if (fabs(yaw_rate) < 0.0001) {
        particles[i].x += velocity * delta_t * cos(particles[i].theta);
        particles[i].y += velocity * delta_t * sin(particles[i].theta);
      }
@@ -95,8 +95,15 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
    }
 }
 
-void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
-                                     vector<LandmarkObs>& observations) {
+//void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
+//                                     vector<LandmarkObs>& observations) {
+
+void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted, vector<LandmarkObs>& observations, Particle &particle) {
+  //below are for visualization
+	std::vector<int> associations;
+	std::vector<double> sense_x;
+	std::vector<double> sense_y;
+
   /**
    * TODO: Find the predicted measurement that is closest to each
    *   observed measurement and assign the observed measurement to this
@@ -108,6 +115,10 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
    for (size_t i = 0; i < observations.size(); i++) {
 
      LandmarkObs obs = observations[i];
+     //below are for visualization
+     double lm_x = observations[i].x;
+     double lm_y = observations[i].y;
+
 
      // init some variables
      double min_distance = std::numeric_limits<double>::max();
@@ -126,7 +137,14 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
 
      // assign the landmark id of nearest distance to this observation
      observations[i].id = index_min;
+     // below are for visualization only.
+     associations.push_back(index_min);
+		 sense_x.push_back(lm_x);
+		 sense_y.push_back(lm_y);
    }
+
+  // Set assocations for visualization purpose only
+	particle = SetAssociations(particle, associations, sense_x, sense_y);
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
@@ -147,6 +165,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    */
    for (size_t i = 0; i < num_particles; i++) {
      // looping each particle
+     particles[i].weight = 1.0;
+
      // ** get the positions and heading of the particle **
      double px = particles[i].x;
      double py = particles[i].y;
@@ -181,10 +201,11 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
      }
 
      // ** associate observations with predictions **
-     dataAssociation(predictions, observations_world);
+     //dataAssociation(predictions, observations_world);
+     dataAssociation(predictions, observations_world, particles[i]);
 
      // ** calculate particle weight using multivariate Gaussian distribution **
-     double wt = 1.0;
+
      for (size_t j = 0; j < observations_world.size(); j++) {
        // looping each observations
        double obsX = observations_world[j].x;
@@ -204,10 +225,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
        // calculate weights
        double sx = std_landmark[0];
        double sy = std_landmark[1];
-       double obs_w = ( 1/(2*M_PI*sx*sy)) * exp( -( pow(predX-obsX,2)/(2*pow(sx, 2)) + (pow(predY-obsY,2)/(2*pow(sy, 2))) ) );
-       wt *= obs_w;
+       double obs_w = ( 1/(2*M_PI*sx*sy)) * exp( -(pow(predX-obsX,2)/(2*pow(sx,2)) + (pow(predY-obsY,2)/(2*pow(sy,2))) ) );
+       particles[i].weight *= obs_w;
      }
-     particles[i].weight = wt;
    }
 }
 
@@ -226,7 +246,7 @@ void ParticleFilter::resample() {
      weights.push_back(particles[i].weight);
    }
 
-   std::discrete_distribution<int> dist(weights.begin(), weights.end());
+   std::discrete_distribution<> dist(weights.begin(), weights.end());
    std::default_random_engine gen;
 
    int index = -1;
@@ -239,10 +259,12 @@ void ParticleFilter::resample() {
    particles = resampled_particles;
 }
 
-void ParticleFilter::SetAssociations(Particle& particle,
-                                     const vector<int>& associations,
-                                     const vector<double>& sense_x,
-                                     const vector<double>& sense_y) {
+//void ParticleFilter::SetAssociations(Particle& particle,
+//                                     const vector<int>& associations,
+//                                     const vector<double>& sense_x,
+//                                     const vector<double>& sense_y) {
+Particle ParticleFilter::SetAssociations(Particle& particle, const vector<int> &associations,
+  const vector<double> &sense_x, const vector<double> &sense_y){
   // particle: the particle to which assign each listed association,
   //   and association's (x,y) world coordinates mapping
   // associations: The landmark id that goes along with each listed association
@@ -251,6 +273,7 @@ void ParticleFilter::SetAssociations(Particle& particle,
   particle.associations= associations;
   particle.sense_x = sense_x;
   particle.sense_y = sense_y;
+  return particle;
 }
 
 string ParticleFilter::getAssociations(Particle best) {
