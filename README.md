@@ -58,12 +58,12 @@ The only file you should modify is `particle_filter.cpp` in the `src` directory.
 
 **A flow chart to visualize the process is shown below:**
 
-![02-l-pseudocode.00-00-47-13.still006](/Users/yilulin/Documents/CarND-Kidnapped-Vehicle-Project/src/pf_flowchart.png)
+![pf_flowchart](/src/pf_flowchart.png)
 
 
 ### 2. Watch-outs and Best-practices
 
-- **Use discrete distribution for resampling:** A simple and straight-forward method to do resampling with weights is to use `std::discrete_distribution`, refer to http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution for details.
+- **Use discrete distribution for resampling:** A simple and straight-forward method to do resampling with weights is to use `std::discrete_distribution`, refer to [this doc](http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution) for details.
 - **Avoid division by zero:** as mentioned in lecture, the motion model with and without yaw_rate is going to be different - using generalized equation when yaw_rate is near zero can cause division-by-zero error. Make sure to have a if-else statement here to update predictions with the correct equation.
 - **Implement Visualization:** the default version of `particle_filter.cpp` does not include a visualization of what landmarks the particles are sensing, this feature is helpful to bebugging the code. Refer to [Gregory D'Angelo's project](https://github.com/gdangelo/CarND-Kidnapped-Vehicle-Project/blob/master/src/particle_filter.cpp) as an example for how to achieve that.
 
